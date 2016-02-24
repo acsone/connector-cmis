@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_cmis_backend_form" model="ir.ui.view">
+      <field name="name">cmis.backend.form (cmis_alf)</field>
+      <field name="model">cmis.backend</field>
+      <field name="inherit_id" ref="cmis.view_cmis_backend_form"/>
+      <field name="arch" type="xml">
+          <field name="location" position="after">
+              <field name="share_location" placeholder="e.g. http://localhost:8080/share" colspan="4"/>
+              <field name="alfresco_api_location" placeholder="e.g. http://localhost:8080/alfresco/s/api" colspan="4"/>
+          </field>
+      </field>
+    </record>
+
+</odoo>
