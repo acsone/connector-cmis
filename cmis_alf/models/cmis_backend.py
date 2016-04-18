@@ -15,10 +15,10 @@ class CmisBackend(models.Model):
 
     alfresco_api_location = fields.Char(
         string='Alfresco Api Url',
-        required=True) 
+        required=True)
 
     @api.multi
-    def get_content_details_url(self,cmis_objectid):
+    def get_content_details_url(self, cmis_objectid):
         """Return the url to the page into Alfresco Share
         displaying the content details
         """
