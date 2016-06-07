@@ -25,6 +25,11 @@ class CmisBackend(models.Model):
         self.ensure_one()
         repo = self.check_auth()
         properties = repo.getObject(cmis_objectid).getProperties()
+        return self.get_content_details_url_from_props(properties)
+
+    @api.multi
+    def get_content_details_url_from_props(self, properties):
+        self.ensure_one()
         details_type = 'document-details'
         if properties['cmis:baseTypeId'] == 'cmis:folder':
             details_type = 'folder-details'
