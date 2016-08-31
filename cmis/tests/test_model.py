@@ -21,7 +21,6 @@ class test_model(TransactionCase):
 
         self.vals = {
             'name': "Test cmis",
-            'version': '1.0',
             'location': "http://localhost:8081/alfresco/s/cmis",
             'username': 'admin',
             'password': 'admin',

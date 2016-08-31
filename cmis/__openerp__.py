@@ -7,20 +7,18 @@
     'version': '9.0.1.0.0',
     'category': 'Connector',
     'summary': 'Connect OpenERP with a CMIS server',
-    'author': "Savoir-faire Linux, Odoo Community Association (OCA)",
+    'author': "Savoir-faire Linux, "
+              "ACSONE SA/NV, "
+              "Odoo Community Association (OCA)",
     'website': 'https://odoo-community.org/',
     'license': 'AGPL-3',
-    'depends': [
-        'connector',
-    ],
     'external_dependencies': {
         'python': ['cmislib'],
     },
     'data': [
-        'views/cmis_backend_view.xml',
+        'security/cmis_backend.xml',
         'views/cmis_menu.xml',
-        'security/ir.model.access.csv',
+        'views/cmis_backend.xml',
     ],
     'installable': True,
-    'auto_install': False,
 }

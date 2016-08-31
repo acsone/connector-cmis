@@ -4,10 +4,7 @@
 import logging
 import httplib2
 import functools
-from . import (
-    backend,
-    models,
-)
+from . import models
 
 logger = logging.getLogger(__name__)
 

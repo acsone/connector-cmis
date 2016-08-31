@@ -1,27 +1,24 @@
 # -*- coding: utf-8 -*-
 # © 2014-2015 Savoir-faire Linux (<http://www.savoirfairelinux.com>).
+# Copyright 2016 ACSONE SA/NV
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 import cmislib.exceptions
+from cmislib.model import CmisClient
+from cmislib.browser.binding import BrowserBinding
 from cmislib.exceptions import ObjectNotFoundException
 
-from openerp import api, fields, models
+from openerp import api, fields, models, tools
 from openerp.exceptions import Warning
 from openerp.tools.translate import _
-from openerp.addons.connector.connector import ConnectorEnvironment
-from openerp.addons.connector.session import ConnectorSession
-from ..unit.backend_adapter import CmisAdapter
 from ..exceptions import CMISError
 
 
 class CmisBackend(models.Model):
     _name = 'cmis.backend'
     _description = 'CMIS Backend'
-    _inherit = 'connector.backend'
+    _order = 'name desc'
 
-    _backend_type = 'cmis'
-
-    version = fields.Selection(
-        selection=[('1.0', '1.0')], required=True)
+    name = fields.Char(required=True)
     location = fields.Char(
         required=True)
     username = fields.Char(
@@ -31,22 +28,42 @@ class CmisBackend(models.Model):
     initial_directory_write = fields.Char(
         'Initial directory for writing', required=True, default='/')
 
-    @api.multi
-    def _get_base_adapter(self):
-        """
-        Get an adapter to test the backend connection
-        """
-        self.ensure_one()
-        session = ConnectorSession.from_env(self.env)
-        environment = ConnectorEnvironment(self, session, None)
-        return CmisAdapter(environment)
+    def _clear_caches(self):
+        pass
+        #self.get_cmis_client.clear()
+        #self.get_by_name.clear()
 
     @api.multi
-    def check_auth(self):
+    def write(self, vals):
+        self._clear_caches()
+        return super(CmisBackend, self).write(vals)
+
+    #@tools.cache
+    @api.multi
+    def get_cmis_client(self):
+        """
+        Get an initialized CmisClient for the using the CMISBrowserBinding
+        """
+        self.ensure_one()
+        return CmisClient(
+            self.location,
+            self.username,
+            self.password,
+            binding=BrowserBinding())
+
+    #@tools.cache
+    @api.model
+    def get_by_name(self, name):
+        backend = self.search([('name', '=', name)])
+        backend.ensure_one()
+        return backend
+
+    @api.multi
+    def get_cmis_repository(self):
         """ Check the authentication with DMS """
         self.ensure_one()
-        adapter = self._get_base_adapter()
-        return adapter._auth(self)
+        client = self.get_cmis_client()
+        return client.defaultRepository
 
     @api.multi
     def check_directory_of_write(self):
@@ -54,7 +71,7 @@ class CmisBackend(models.Model):
         datas_fname = 'testdoc'
         for this in self:
             # login with the cmis account
-            repo = this.check_auth()
+            repo = this.get_cmis_repository()
             folder_path_write = this.initial_directory_write
             path_write_objectid = self.get_folder_by_path(
                 folder_path_write,
@@ -82,7 +99,7 @@ class CmisBackend(models.Model):
     def get_folder_by_path(self, path, create_if_not_found=True,
                            cmis_parent_objectid=None):
         self.ensure_one()
-        repo = self.check_auth()
+        repo = self.get_cmis_repository()
         if cmis_parent_objectid:
             path = repo.getObject(
                 cmis_parent_objectid).getPaths()[0] + '/' + path
