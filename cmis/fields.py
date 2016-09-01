@@ -69,8 +69,9 @@ class CmisFolder(fields.Field):
             value = fct(backend)
         else:
             value = self._create_in_cmis(record, backend)
-        record._cache[self] = value
-        
+        self.__set__(record, value)
+        return value
+
     def _create_in_cmis(self, record, backend):
         name = self._get_cmis_name(record)
         path = self._get_cmis_path(record, backend)

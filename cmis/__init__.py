@@ -5,6 +5,7 @@ import logging
 import httplib2
 import functools
 from . import models
+from . import controllers
 
 logger = logging.getLogger(__name__)
 
