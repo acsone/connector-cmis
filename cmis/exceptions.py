@@ -9,9 +9,3 @@ class CMISError(UserError):
     """CMIS Error!"""
     def __init__(self, value):
         super(CMISError, self).__init__(value)
-
-
-class CMISConnectionError(CMISError):
-    """CMIS connection Error!"""
-    def __init__(self, value):
-        super(CMISConnectionError, self).__init__(value)

@@ -2,15 +2,18 @@
 # © 2014-2015 Savoir-faire Linux (<http://www.savoirfairelinux.com>).
 # Copyright 2016 ACSONE SA/NV
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
+import logging
 import cmislib.exceptions
 from cmislib.model import CmisClient
 from cmislib.browser.binding import BrowserBinding
 from cmislib.exceptions import ObjectNotFoundException
 
 from openerp import api, fields, models, tools
-from openerp.exceptions import Warning
+from openerp.exceptions import UserError
 from openerp.tools.translate import _
 from ..exceptions import CMISError
+
+_logger = logging.getLogger(__name__)
 
 
 class CmisBackend(models.Model):
@@ -30,15 +33,15 @@ class CmisBackend(models.Model):
 
     def _clear_caches(self):
         pass
-        #self.get_cmis_client.clear()
-        #self.get_by_name.clear()
+        self.get_cmis_client.clear()
+        self.get_by_name.clear()
 
     @api.multi
     def write(self, vals):
         self._clear_caches()
         return super(CmisBackend, self).write(vals)
 
-    #@tools.cache
+    @tools.cache()
     @api.multi
     def get_cmis_client(self):
         """
@@ -51,8 +54,8 @@ class CmisBackend(models.Model):
             self.password,
             binding=BrowserBinding())
 
-    #@tools.cache
     @api.model
+    @tools.cache('name')
     def get_by_name(self, name):
         backend = self.search([('name', '=', name)])
         backend.ensure_one()
@@ -71,7 +74,6 @@ class CmisBackend(models.Model):
         datas_fname = 'testdoc'
         for this in self:
             # login with the cmis account
-            repo = this.get_cmis_repository()
             folder_path_write = this.initial_directory_write
             path_write_objectid = self.get_folder_by_path(
                 folder_path_write,
@@ -90,10 +92,15 @@ class CmisBackend(models.Model):
                         _("The test file already exists in the DMS. "
                           "Please remove it and try again."))
                 except cmislib.exceptions.RuntimeException:
+                    _logger.exception("Please check your access right.")
                     raise CMISError(
                         ("Please check your access right."))
-            self.get_error_for_path(path_write_objectid != False,
-                                    folder_path_write)
+            if path_write_objectid is not False:
+                raise UserError(_("Path is correct for : %s") %
+                                path_write_objectid)
+            else:
+                raise CMISError(_("Error path for : %s") %
+                                path_write_objectid)
 
     @api.multi
     def get_folder_by_path(self, path, create_if_not_found=True,
@@ -119,13 +126,6 @@ class CmisBackend(models.Model):
                 new_root = repo.createFolder(new_root, part)
             root = new_root
         return root
-
-    def get_error_for_path(self, is_valid, path):
-        """Return following the boolean the right error message"""
-        if is_valid:
-            raise Warning(_("Path is correct for : %s") % path)
-        else:
-            raise CMISError(_("Error path for : %s") % path)
 
     def sanitize_input(self, file_name):
         """Prevent injection by escaping: '%_"""

@@ -24,7 +24,7 @@ class BaseTestCmis(common.SavepointCase):
     @classmethod
     def setUpClass(cls):
         super(BaseTestCmis, cls).setUpClass()
-         # mock commit since it"s called in the _auto_init method
+        # mock commit since it"s called in the _auto_init method
         cls.cr.commit = mock.MagicMock()
         cls.cmis_test_model = cls._init_test_model(models.CmisTestModel)
         cls.cmis_backend = cls.env['cmis.backend'].create({

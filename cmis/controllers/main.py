@@ -9,12 +9,13 @@ from openerp.addons.web.controllers import main
 
 class CmisController(http.Controller):
 
-    @http.route('/web/cmis/field/init_value', type='json', methods=['POST'],
+    @http.route('/web/cmis/field/create_value', type='json', methods=['POST'],
                 auth="user")
     @main.serialize_exception
-    def init_field_value(self, model_name, res_id, field_name):
+    def create_field_value(self, model_name, res_id, field_name):
         model_inst = http.request.env[model_name].browse(int(res_id))
-        value = model_inst._fields[field_name].init_value(model_inst)
+        model_inst._fields[field_name].create_value(model_inst)
+        value = getattr(model_inst, field_name)
         response = werkzeug.Response(json.dumps(
             {'value': value}), mimetype='application/json')
         return response

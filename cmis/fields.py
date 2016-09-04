@@ -7,99 +7,172 @@ from openerp.exceptions import UserError
 
 
 class CmisFolder(fields.Field):
-    """ A reference to a cmis:folder. The reference must be formatted as
-    follow: backend_name + ':' cmis:objectId
-    
+    """ A reference to a cmis:folder. (cmis:objectId)
+
     :param backend_name:
-    
-    The attribute ``backend_name`` is mandatory
-    
+
+        The attribute ``backend_name`` is mandatory
+
     :param allow_create: (by default True)
-    
+
     :param allow_delete: (by default False)
-    
-    :param cmis_create_method:
-    
-    :param cmis_path: (by default backend.initial_directory_write + '/' model._name)
-    
-    :param cmis_name_get: (by default instance.name_get)
+
+    :param create_method: name of a method that create the field into the
+        CMIS repository. The method must assign the field on all records of the
+        invoked recordset. The method is called with the field definition
+        instance and the bakend as paramaters
+        (optional)
+
+    :param create_parent_get: name of a method that return the cmis:objectId of
+        the folder to use as parent. The method is called with the field
+        definition instance and the bakend as paramaters.
+        (optional: by default the folder is
+        created  as child of backend.initial_directory_write + '/' model._name)
+    :rtype: dict
+    :return: a dictionay with an entry for each record of the invoked
+        recordset with the following structure ::
+
+            {record.id: 'cmis:objectId'}
+
+    :param create_name_get: name of a method that return the name of the
+        folder to create into the CMIS repository. The method is called with
+        the field definition instance and the bakend as paramaters.
+        (optional: by default instance.name_get)
+    :rtype: dict
+    :return: a dictionay with an entry for each record of the invoked
+        recordset with the following structure ::
+
+            {record.id: 'name'}
+
+    :parem create_properties_get: name of a method that return a dictionary of
+        CMIS properties ro use to create the folder. The method is called
+        with the field definition instance and the bakend as paramaters
+        (optional: default empty)
+    :rtype: dict
+    :return: a dictionay with an entry for each record of the invoked
+        recordset with the following structure ::
+
+            {record.id: {'cmis:xxx': 'val1', ...}}
 
     """
     type = 'char'  # Postgresl
     widget = 'cmis_folder'  # Web widget
     _slots = {
         'backend_name': None,
-        'cmis_name_get': 'name_get',
+        'create_method': None,
+        'create_name_get': 'name_get',
+        'create_parent_get': None,
+        'create_properties_get': None,
         'allow_create': True,
-        'allow_delete': False,
-        'cmis_path': None,
-        'cmis_create_method': None
+        'allow_delete': False
     }
 
     def __init__(self, backend_name=None, string=None, **kwargs):
         super(CmisFolder, self).__init__(
             backend_name=backend_name, string=string, **kwargs)
 
-
     def get_description(self, env):
         """ Return a dictionary that describes the field ``self``. """
         desc = super(CmisFolder, self).get_description(env)
         desc['type'] = self.widget
         return desc
-    
+
     _description_backend_name = property(attrgetter('backend_name'))
 
-    def init_value(self, record):
-        if record is None:
-            return self         # the field is accessed through the owner class
+    def get_backend(self, records):
+        return records.env['cmis.backend'].get_by_name(name=self.backend_name)
 
-        env = record.env
-        if not record:
-            # null record -> return the null value for this field
-            return self.null(env)
-        
-        self._check_null(record)
-        
-        value = None
-        backend = env['cmis.backend'].get_by_name(name=self.backend_name)
-        if self.cmis_create_method:
-            fct = self.cmis_create_method
+    def create_value(self, records):
+        """Create a new folder for each record into the cmis container and
+        store the value as field value
+        """
+        for record in records:
+            self._check_null(record)
+        backend = self.get_backend(records)
+        if self.create_method:
+            fct = self.create_method
             if not callable(fct):
-                fct = getattr(record, fct)
-            value = fct(backend)
-        else:
-            value = self._create_in_cmis(record, backend)
-        self.__set__(record, value)
-        return value
+                fct = getattr(records, fct)
+            fct(self, backend)
+            return
+        self._create_in_cmis(records, backend)
 
-    def _create_in_cmis(self, record, backend):
-        name = self._get_cmis_name(record)
-        path = self._get_cmis_path(record, backend)
-        #create
-        parent_cmis_object = backend.get_folder_by_path(
-            path, create_if_not_found=True)
+    def _create_in_cmis(self, records, backend):
+        names = self.get_create_names(records, backend)
+        parents = self.get_create_parents(records, backend)
+        properties = self.get_create_properties(records, backend)
         repo = backend.get_cmis_repository()
-        new_folder = repo.createFolder(
-            parent_cmis_object, name)
-        return new_folder.getObjectId()
+        for record in records:
+            name = names[record.id]
+            parent = parents[record.id]
+            props = properties[record.id]
+            value = repo.createFolder(
+                parent, name, props)
+            self.__set__(record, value.getObjectId())
 
     def _check_null(self, record, raise_exception=True):
         val = self.__get__(record, record)
         if val and raise_exception:
             raise UserError('A value is already assigned to %s' % self)
-        return val 
+        return val
 
-    def _get_cmis_name(self, record):
-        if self.cmis_name_get == 'name_get':
-            return record.name_get()[0][1]
-        fct = self.cmis_name_get
+    def get_create_names(self, records, backend):
+        """return the names of the  folders to create into the CMIS repository.
+        :rtype: dict
+        :return: a dictionay with an entry for each record with the following
+        structure ::
+
+            {record.id: 'name'}
+
+        """
+        if self.create_name_get == 'name_get':
+            return dict(records.name_get())
+        fct = self.create_name_get
         if not callable(fct):
-            fct = getattr(record, fct)
-        return fct()
+            fct = getattr(records, fct)
+        return fct(self, backend)
 
-    def _get_cmis_path(self, record, backend):
-        if self.cmis_path:
-            return self.cmis_path
-        else:
-            return '/'.join([backend.initial_directory_write,
-                             record._name.replace('.', '_')])
+    def get_create_parents(self, records, backend):
+        """return the cmis:objectId of the cmis folder to use as parent of the
+        new folder.
+        :rtype: dict
+        :return: a dictionay with an entry for each record with the following
+        structure ::
+
+            {record.id: 'cmis:objectId'}
+
+        """
+        if self.create_parent_get:
+            fct = self.create_parent_get
+            if not callable(fct):
+                fct = getattr(records, fct)
+            return fct(self, backend)
+        path = self.get_default_parent_path(records, backend)
+        parent_cmis_object = backend.get_folder_by_path(
+            path, create_if_not_found=True)
+        return dict.fromkeys(records.ids, parent_cmis_object)
+
+    def get_create_properties(self, records, backend):
+        """Return the properties to use to created the folder into the CMIS
+        container.
+        :rtype: dict
+        :return: a dictionay with an entry for each record with the following
+        structure ::
+
+            {record.id: {'cmis:xxx': 'val1', ...}}
+
+        """
+        if self.create_properties_get:
+            fct = self.create_properties_get
+            if not callable(fct):
+                fct = getattr(records, fct)
+            return fct(self, backend)
+        return dict.fromkeys(records.ids, None)
+
+    def get_default_parent_path(self, records, backend):
+        """Return the default path into the cmis container to use as parent
+        on folder create. By default:
+        backend.initial_directory_write / record._name
+        """
+        return '/'.join([backend.initial_directory_write,
+                         records[0]._name.replace('.', '_')])

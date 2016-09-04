@@ -4,7 +4,6 @@
 import mock
 from contextlib import contextmanager
 
-from openerp.exceptions import UserError
 from openerp import http
 from . import common
 from ..controllers import main
@@ -31,12 +30,9 @@ class TestCmisController(common.BaseTestCmis):
 
     def test_init_field_value(self):
         controller = main.CmisController()
-        with mock.patch('openerp.addons.cmis.'
-                        'fields.CmisFolder.init_value') as mocked_func, \
-                mock_http_request_env(self.env):
-            mocked_func.side_effect = lambda a: "10"
-            val = controller.init_field_value(
+        with mock_http_request_env(self.env):
+            val = controller.create_field_value(
                 self.cmis_test_model_inst._name, self.cmis_test_model_inst.id,
-                'cmis_folder')
+                'cmis_folder2')
             self.assertEquals(val.status_code, 200)
-            self.assertEquals(val.data, '{"value": "10"}')
+            self.assertEquals(val.data, '{"value": "_create_method"}')
