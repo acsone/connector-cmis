@@ -13,9 +13,9 @@ class CmisFolder(fields.Field):
 
         The attribute ``backend_name`` is mandatory
 
-    :param allow_create: (by default True)
+    :param allow_create: Allow create from UI (by default True)
 
-    :param allow_delete: (by default False)
+    :param allow_delete: Allow delete from UI (by default False)
 
     :param create_method: name of a method that create the field into the
         CMIS repository. The method must assign the field on all records of the
@@ -77,10 +77,15 @@ class CmisFolder(fields.Field):
         desc['type'] = self.widget
         return desc
 
-    _description_backend_name = property(attrgetter('backend_name'))
+    def _description_backend(self, env):
+        backend = self.get_backend(env)
+        return backend.get_web_description()[backend.id]
 
-    def get_backend(self, records):
-        return records.env['cmis.backend'].get_by_name(name=self.backend_name)
+    _description_allow_create = property(attrgetter('allow_create'))
+    _description_allow_delete = property(attrgetter('allow_delete'))
+
+    def get_backend(self, env):
+        return env['cmis.backend'].get_by_name(name=self.backend_name)
 
     def create_value(self, records):
         """Create a new folder for each record into the cmis container and
@@ -88,7 +93,7 @@ class CmisFolder(fields.Field):
         """
         for record in records:
             self._check_null(record)
-        backend = self.get_backend(records)
+        backend = self.get_backend(records.env)
         if self.create_method:
             fct = self.create_method
             if not callable(fct):

@@ -100,5 +100,12 @@ class TestCmisFields(common.BaseTestCmis):
         # get_description is the method call by the method fields_get
         # to return to the UI the desciption of the UI
         descr = inst._fields['cmis_folder'].get_description(self.env)
-        self.assertEquals(descr.get('backend_name'), self.cmis_backend.name)
+        backend_description = descr.get('backend')
+        self.assertDictEqual(
+            backend_description,
+            {'id': self.cmis_backend.id,
+             'name': self.cmis_backend.name,
+             'location': self.cmis_backend.location})
         self.assertEquals(descr.get('type'), 'cmis_folder')
+        self.assertEquals(descr.get('allow_create'), True)
+        self.assertEquals(descr.get('allow_delete'), False)

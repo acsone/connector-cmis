@@ -61,6 +61,27 @@ class CmisBackend(models.Model):
         backend.ensure_one()
         return backend
 
+    @api.model
+    def _get_web_description(self, record):
+        """ Return the desciption of backend record to be included into the
+        field description of cmis fields that reference the backend.
+        """
+        return {
+            'id': record.id,
+            'name': record.name,
+            'location': record.location
+        }
+
+    @api.multi
+    def get_web_description(self):
+        """ Return informations to be included into the field description of
+        cmis fields that reference the backend.
+        """
+        ret = {}
+        for this in self:
+            ret[this.id] = self._get_web_description(this)
+        return ret
+
     @api.multi
     def get_cmis_repository(self):
         """ Check the authentication with DMS """
