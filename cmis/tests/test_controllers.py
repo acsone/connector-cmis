@@ -34,5 +34,4 @@ class TestCmisController(common.BaseTestCmis):
             val = controller.create_field_value(
                 self.cmis_test_model_inst._name, self.cmis_test_model_inst.id,
                 'cmis_folder2')
-            self.assertEquals(val.status_code, 200)
-            self.assertEquals(val.data, '{"value": "_create_method"}')
+            self.assertDictEqual(val, {"value": "_create_method"})

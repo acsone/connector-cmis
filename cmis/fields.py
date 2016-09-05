@@ -110,7 +110,7 @@ class CmisFolder(fields.Field):
         for record in records:
             name = names[record.id]
             parent = parents[record.id]
-            props = properties[record.id]
+            props = properties[record.id] or {}
             value = repo.createFolder(
                 parent, name, props)
             self.__set__(record, value.getObjectId())

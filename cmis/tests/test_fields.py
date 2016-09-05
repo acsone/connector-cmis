@@ -38,7 +38,7 @@ class TestCmisFields(common.BaseTestCmis):
             # the one returned by the name_get method on the record and the
             # parent directory, the one returned by the method getObjectByPath
             mocked_cmis_repository.createFolder.assert_called_once_with(
-                'root_id', 'folder_name', None)
+                'root_id', 'folder_name', {})
             # a second call to the create_value must raise a UserError since
             # the value is already initialized
             with self.assertRaises(UserError):

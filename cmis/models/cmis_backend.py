@@ -41,8 +41,8 @@ class CmisBackend(models.Model):
         self._clear_caches()
         return super(CmisBackend, self).write(vals)
 
-    @tools.cache()
     @api.multi
+    @tools.cache()
     def get_cmis_client(self):
         """
         Get an initialized CmisClient for the using the CMISBrowserBinding
