@@ -32,9 +32,8 @@ class CmisBackend(models.Model):
         'Initial directory for writing', required=True, default='/')
 
     def _clear_caches(self):
-        pass
-        self.get_cmis_client.clear()
-        self.get_by_name.clear()
+        self.get_cmis_client.clear_cache(self)
+        self.get_by_name.clear_cache(self)
 
     @api.multi
     def write(self, vals):

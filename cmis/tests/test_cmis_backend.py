@@ -25,3 +25,10 @@ class TestCmisBackend(common.SavepointCase):
         self.assertEquals(self.backend_instance, backend)
         with self.assertRaises(ValueError):
             self.cmis_backend.get_by_name('error')
+
+    def test_clear_caches(self):
+        backend = self.cmis_backend.get_by_name(name=self.vals['name'])
+        self.assertEquals(self.backend_instance, backend)
+        backend.write({'name': 'new name'})
+        backend = self.cmis_backend.get_by_name(name='new name')
+        self.assertEquals(backend.name, 'new name')
