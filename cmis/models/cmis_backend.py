@@ -56,7 +56,12 @@ class CmisBackend(models.Model):
     @api.model
     @tools.cache('name')
     def get_by_name(self, name):
-        backend = self.search([('name', '=', name)])
+        # simple case: one backend
+        domain = [(1, '=', 1)]
+        if name:
+            # multi backend case
+            domain=[('name', '=', name)]
+        backend = self.search(domain)
         backend.ensure_one()
         return backend
 
