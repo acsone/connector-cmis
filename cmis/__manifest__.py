@@ -14,7 +14,7 @@
     'website': 'https://odoo-community.org/',
     'license': 'AGPL-3',
     'external_dependencies': {
-        'python': ['cmislib'],
+        'python': ['cmislib3'],
     },
     'data': [
         'security/cmis_backend.xml',
