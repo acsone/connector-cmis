@@ -4,7 +4,7 @@
 
 import logging
 
-from odoo import api, fields, models
+from odoo import fields, models
 from odoo.exceptions import UserError
 from odoo.tools.translate import _
 from ..exceptions import CMISError
@@ -41,7 +41,6 @@ class CmisBackend(models.Model):
          _('CMIS Backend name must be unique!')),
     ]
 
-    @api.multi
     def get_cmis_client(self):
         """
         Get an initialized CmisClient using the CMISBrowserBinding
@@ -53,14 +52,12 @@ class CmisBackend(models.Model):
             self.password,
             binding=BrowserBinding())
 
-    @api.multi
     def get_cmis_repository(self):
         """ Return the default repository in the CMIS container """
         self.ensure_one()
         client = self.get_cmis_client()
         return client.defaultRepository
 
-    @api.multi
     def check_directory_of_write(self):
         """Check access right to write from the path"""
         datas_fname = 'testdoc'
@@ -94,7 +91,6 @@ class CmisBackend(models.Model):
                 raise CMISError(_("Error path for : %s") %
                                 path_write_objectid)
 
-    @api.multi
     def get_folder_by_path(self, path, create_if_not_found=True,
                            cmis_parent_objectid=None):
         self.ensure_one()
