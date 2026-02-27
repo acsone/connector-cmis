@@ -21,6 +21,10 @@
                                 name="location"
                                 placeholder="e.g. http://localhost:8081/alfresco/s/cmis"
                             />
+                            <field
+                                name="backend_host_override"
+                                placeholder="e.g. otherhost:8082"
+                            />
                         </group>
                         <group name="cmis_right">
                             <field name="password" password="True" />
