@@ -29,7 +29,7 @@ class CmisBackend(models.Model):
     name = fields.Char(required=True)
     location = fields.Char(required=True)
     username = fields.Char(required=True)
-    password = fields.Char(required=True)
+    password = fields.Char(required=True, groups="base.group_system")
     initial_directory_write = fields.Char(
         "Initial directory for writing", required=True, default="/"
     )
@@ -38,19 +38,22 @@ class CmisBackend(models.Model):
         ("name_uniq", "unique(name)", _("CMIS Backend name must be unique!"))
     ]
 
-    def get_cmis_client(self):
+    def _get_cmis_client(self):
         """
         Get an initialized CmisClient using the CMISBrowserBinding
         """
         self.ensure_one()
         return CmisClient(
-            self.location, self.username, self.password, binding=BrowserBinding()
+            self.location,
+            self.username,
+            self.sudo().password,
+            binding=BrowserBinding(),
         )
 
     def get_cmis_repository(self):
         """Return the default repository in the CMIS container"""
         self.ensure_one()
-        client = self.get_cmis_client()
+        client = self._get_cmis_client()
         return client.defaultRepository
 
     def check_directory_of_write(self):
